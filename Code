@@ -1,0 +1,77 @@
+import os
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import (
+    confusion_matrix, accuracy_score, precision_score,
+    recall_score, f1_score, roc_auc_score, roc_curve
+)
+
+# Create 'plots' directory if it doesn't exist
+os.makedirs("plots", exist_ok=True)
+
+
+df = pd.read_csv('data.csv')
+
+
+df.drop(['id', 'Unnamed: 32'], axis=1, inplace=True)
+df['diagnosis'] = df['diagnosis'].map({'M': 1, 'B': 0})
+
+X = df.drop('diagnosis', axis=1)
+y = df['diagnosis']
+
+
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+
+scaler = StandardScaler()
+X_train_scaled = scaler.fit_transform(X_train)
+X_test_scaled = scaler.transform(X_test)
+
+
+model = LogisticRegression()
+model.fit(X_train_scaled, y_train)
+
+y_pred = model.predict(X_test_scaled)
+y_prob = model.predict_proba(X_test_scaled)[:, 1]
+
+print("Accuracy:", accuracy_score(y_test, y_pred))
+print("Precision:", precision_score(y_test, y_pred))
+print("Recall:", recall_score(y_test, y_pred))
+print("F1 Score:", f1_score(y_test, y_pred))
+print("ROC AUC:", roc_auc_score(y_test, y_prob))
+
+# Step 7: Confusion Matrix
+cm = confusion_matrix(y_test, y_pred)
+sns.heatmap(cm, annot=True, fmt='d', cmap='Blues')
+plt.title("Confusion Matrix")
+plt.xlabel("Predicted")
+plt.ylabel("Actual")
+plt.savefig("plots/confusion_matrix.png")
+plt.show()
+
+# Step 8: ROC Curve
+fpr, tpr, thresholds = roc_curve(y_test, y_prob)
+plt.plot(fpr, tpr, label='Logistic Regression')
+plt.plot([0, 1], [0, 1], linestyle='--')
+plt.xlabel("False Positive Rate")
+plt.ylabel("True Positive Rate")
+plt.title("ROC Curve")
+plt.legend()
+plt.savefig("plots/roc_curve.png")
+plt.show()
+
+# Step 9: Sigmoid Function Visual
+z = np.linspace(-10, 10, 200)
+sigmoid = 1 / (1 + np.exp(-z))
+plt.plot(z, sigmoid)
+plt.title("Sigmoid Function")
+plt.xlabel("z")
+plt.ylabel("Sigmoid(z)")
+plt.grid()
+plt.savefig("plots/sigmoid.png")
+plt.show()
